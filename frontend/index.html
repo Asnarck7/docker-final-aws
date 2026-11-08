@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Productos - CRUD</title>
+    <style>
+        :root {
+            --primary: #2d3748;
+            --accent: #ed64a6;
+            --accent-hover: #d53f8c;
+            --secondary: #4a5568;
+            --danger: #e53e3e;
+            --danger-hover: #c53030;
+            --edit: #3182ce;
+            --edit-hover: #2b6cb0;
+            --bg: #f7fafc;
+            --card-bg: #ffffff;
+            --text-main: #1a202c;
+            --text-muted: #718096;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            padding: 3rem 1rem;
+        }
+
+        .container {
+            max-width: 720px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 1.75rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+            margin-bottom: 1.5rem;
+        }
+
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .mode-badge {
+            font-size: 0.78rem;
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
+            background: rgba(237, 100, 166, 0.12);
+            color: var(--accent-hover);
+        }
+
+        .mode-badge.editing {
+            background: rgba(49, 130, 206, 0.12);
+            color: var(--edit);
+        }
+
+        form {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            width: 100%;
+        }
+
+        .input-name {
+            flex: 2;
+            min-width: 0;
+            padding: 0.85rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .input-price {
+            flex: 1;
+            min-width: 0;
+            padding: 0.85rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .input-name:focus,
+        .input-price:focus,
+        .search-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(237, 100, 166, 0.15);
+        }
+
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.85rem 1.35rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-cancel {
+            background-color: #cbd5e0;
+            color: var(--primary);
+            display: none;
+        }
+
+        .btn-cancel:hover {
+            background-color: #a0aec0;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.7rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: var(--card-bg);
+            outline: none;
+        }
+
+        .count-badge {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        li {
+            background: var(--card-bg);
+            padding: 1.15rem 1.4rem;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid var(--accent);
+            transition: transform 0.2s, box-shadow 0.2s;
+            gap: 1rem;
+        }
+
+        li:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .product-info {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            flex-wrap: wrap;
+            min-width: 0;
+        }
+
+        .product-id {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: #edf2f7;
+            padding: 0.2rem 0.55rem;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .product-name {
+            font-size: 1.08rem;
+            color: var(--primary);
+            font-weight: 600;
+            word-break: break-word;
+        }
+
+        .product-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-shrink: 0;
+        }
+
+        .price-tag {
+            color: var(--accent-hover);
+            font-weight: 700;
+            background: rgba(237, 100, 166, 0.12);
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            font-size: 0.95rem;
+            margin-right: 0.25rem;
+        }
+
+        .btn-sm {
+            padding: 0.45rem 0.8rem;
+            font-size: 0.85rem;
+            border-radius: 6px;
+        }
+
+        .btn-edit {
+            background-color: var(--edit);
+        }
+
+        .btn-edit:hover {
+            background-color: var(--edit-hover);
+        }
+
+        .btn-delete {
+            background-color: var(--danger);
+        }
+
+        .btn-delete:hover {
+            background-color: var(--danger-hover);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            background: var(--card-bg);
+            border-radius: 10px;
+            color: var(--text-muted);
+            border: 1px dashed var(--border);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background: var(--primary);
+            color: #fff;
+            padding: 0.85rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.92rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+            transition: opacity 0.25s, transform 0.25s;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 600px) {
+            form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .input-name,
+            .input-price,
+            button {
+                width: 100%;
+                flex: none;
+            }
+            li {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .product-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Catálogo de Productos</h1>
+
+        <div class="card">
+            <div class="form-header">
+                <span id="formTitle">Agregar Nuevo Producto</span>
+                <span id="modeBadge" class="mode-badge">Modo Creación</span>
+            </div>
+            <form id="productForm">
+                <input type="hidden" id="productId">
+                <input type="text" id="name" class="input-name" placeholder="Nombre del producto" required>
+                <input type="number" step="0.01" id="price" class="input-price" placeholder="Precio ($)" required>
+                <button type="submit" id="submitBtn">Agregar</button>
+                <button type="button" id="cancelBtn" class="btn-cancel">Cancelar</button>
+            </form>
+        </div>
+
+        <div class="toolbar">
+            <input type="text" id="searchInput" class="search-input" placeholder="Buscar producto por nombre o #ID...">
+            <span id="countBadge" class="count-badge">0 productos</span>
+        </div>
+
+        <ul id="productList"></ul>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        let allProducts = [];
+        const productForm = document.getElementById('productForm');
+        const productIdInput = document.getElementById('productId');
+        const nameInput = document.getElementById('name');
+        const priceInput = document.getElementById('price');
+        const submitBtn = document.getElementById('submitBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const formTitle = document.getElementById('formTitle');
+        const modeBadge = document.getElementById('modeBadge');
+        const searchInput = document.getElementById('searchInput');
+        const countBadge = document.getElementById('countBadge');
+        const productList = document.getElementById('productList');
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2600);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // READ - Obtener todos los productos
+        async function fetchProducts() {
+            try {
+                const res = await fetch('/api/products');
+                if (!res.ok) throw new Error('Error en la respuesta del servidor');
+                allProducts = await res.json();
+                renderProducts();
+            } catch (error) {
+                console.error('Error al cargar productos:', error);
+                productList.innerHTML = `<div class="empty-state">No se pudo conectar con la API. Verifica que los contenedores estén activos.</div>`;
+            }
+        }
+
+        function renderProducts() {
+            const query = searchInput.value.trim().toLowerCase();
+            const filtered = allProducts.filter(p =>
+                p.name.toLowerCase().includes(query) ||
+                String(p.id).includes(query)
+            );
+
+            countBadge.textContent = `${filtered.length} ${filtered.length === 1 ? 'producto' : 'productos'}`;
+
+            if (filtered.length === 0) {
+                productList.innerHTML = `<div class="empty-state">No hay productos registrados que coincidan con la búsqueda.</div>`;
+                return;
+            }
+
+            productList.innerHTML = filtered.map(p => `
+                <li>
+                    <div class="product-info">
+                        <span class="product-id">#${p.id}</span>
+                        <span class="product-name">${escapeHtml(p.name)}</span>
+                    </div>
+                    <div class="product-actions">
+                        <span class="price-tag">$${escapeHtml(String(p.price))}</span>
+                        <button type="button" class="btn-sm btn-edit" onclick="startEdit(${p.id})">Editar</button>
+                        <button type="button" class="btn-sm btn-delete" onclick="deleteProduct(${p.id})">Eliminar</button>
+                    </div>
+                </li>
+            `).join('');
+        }
+
+        // CREATE & UPDATE - Enviar formulario
+        productForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const id = productIdInput.value;
+            const name = nameInput.value.trim();
+            const price = priceInput.value.trim();
+
+            if (!name || !price) return;
+
+            try {
+                if (id) {
+                    // UPDATE (PUT)
+                    const res = await fetch(`/api/products/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, price })
+                    });
+                    if (!res.ok) throw new Error('No se pudo actualizar el producto');
+                    showToast(`Producto #${id} actualizado correctamente`);
+                } else {
+                    // CREATE (POST)
+                    const res = await fetch('/api/products', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, price })
+                    });
+                    if (!res.ok) throw new Error('No se pudo crear el producto');
+                    showToast('Producto agregado correctamente');
+                }
+
+                resetForm();
+                fetchProducts();
+            } catch (error) {
+                console.error('Error al guardar el producto:', error);
+                showToast('Ocurrió un error al guardar el producto');
+            }
+        });
+
+        // Preparar edición
+        window.startEdit = function(id) {
+            const product = allProducts.find(p => p.id === id);
+            if (!product) return;
+
+            productIdInput.value = product.id;
+            nameInput.value = product.name;
+            priceInput.value = product.price;
+
+            formTitle.textContent = `Editando Producto #${product.id}`;
+            modeBadge.textContent = 'Modo Edición';
+            modeBadge.classList.add('editing');
+            submitBtn.textContent = 'Actualizar';
+            cancelBtn.style.display = 'inline-block';
+            nameInput.focus();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        // DELETE - Eliminar producto
+        window.deleteProduct = async function(id) {
+            const product = allProducts.find(p => p.id === id);
+            const label = product ? `"${product.name}"` : `#${id}`;
+            if (!confirm(`¿Estás seguro de que deseas eliminar el producto ${label}?`)) return;
+
+            try {
+                const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error('No se pudo eliminar');
+                if (productIdInput.value === String(id)) {
+                    resetForm();
+                }
+                showToast(`Producto eliminado correctamente`);
+                fetchProducts();
+            } catch (error) {
+                console.error('Error al eliminar producto:', error);
+                showToast('Error al eliminar el producto');
+            }
+        };
+
+        function resetForm() {
+            productForm.reset();
+            productIdInput.value = '';
+            formTitle.textContent = 'Agregar Nuevo Producto';
+            modeBadge.textContent = 'Modo Creación';
+            modeBadge.classList.remove('editing');
+            submitBtn.textContent = 'Agregar';
+            cancelBtn.style.display = 'none';
+        }
+
+        cancelBtn.addEventListener('click', resetForm);
+        searchInput.addEventListener('input', renderProducts);
+
+        fetchProducts();
+    </script>
+
+</body>
+</html>
